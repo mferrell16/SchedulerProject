@@ -30,6 +30,10 @@ int local_scheduler() {
 
 int main()
 {
+	printf("***** NOTES TO KNOW ******\n");
+	printf("you can now enter the command 'lottery'. It will tell you usage.\n");
+	printf("Proc object now has an extra varibale for ticket and global variable TotalTickets was added to Proc.C \n"); 
+	printf("In the scheduler() function, if you uncomment the print statements it is easier to see how the code runs.\n");
     pinit(); // initialize process table
     curr_proc_id = userinit(); // create first user process
     char cmd[MAX_COMMAND_LENGTH + 1];

@@ -107,6 +107,7 @@ userinit(void)
   strcpy(p->name, "userinit"); 
   p->state = RUNNING;
   curr_proc = p;
+  //tickets things 
   p->tickets=1; 
   TotalTickets +=1; 
   return p->pid;
@@ -138,6 +139,7 @@ Fork(int fork_proc_id)
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
+  //tickets things 
   np->tickets = 1;
   TotalTickets +=1;  
   return pid;
@@ -319,17 +321,24 @@ scheduler(void)
 //  if(first_sched) first_sched = 0;
 //  else sti();
 
+	//stop running current process 
   curr_proc->state = RUNNABLE;
 
   struct proc *p;
+  
+	//pick a lottery winner 
 	int winner = (rand() % (TotalTickets)); 
-	//printf("winner is: %d\n", winner);
-	
+	//***printf("winner is: %d\n", winner);
+	//initialize counter 
 	int counter =0; 
+	
+	//loop through procs 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+	  //incrememnt counter by tickets per proc 
 	  counter += p->tickets; 
-	  //printf("counter is at: %d\n", counter);
+	  //***printf("counter is at: %d\n", counter);
+	  //find winner 
 	  if (counter > winner) 
 		 break; 
 	
