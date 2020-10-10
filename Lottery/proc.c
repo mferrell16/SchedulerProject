@@ -23,7 +23,7 @@ void release(int *p) {
 
 // enum procstate for printing
 char *procstatep[] = { "UNUSED", "EMPRYO", "SLEEPING", "RUNNABLE", "RUNNING", "ZOMBIE" };
-int TotalTickets=0; 
+
 // Table of all processes
 struct {
   int lock;   // not used in Lab
@@ -109,7 +109,6 @@ userinit(void)
   curr_proc = p;
   //tickets things 
   p->tickets=1; 
-  TotalTickets +=1; 
   return p->pid;
 }
 
@@ -140,8 +139,7 @@ Fork(int fork_proc_id)
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
   //tickets things 
-  np->tickets = 1;
-  TotalTickets +=1;  
+  np->tickets = 1; 
   return pid;
 }
 
@@ -249,7 +247,8 @@ Sleep(int sleep_proc_id, int chan)
 }
 
 // Wake up all processes sleeping on chan.
-// The ptable lock must be held.
+// The ptable lock must be held.]
+//idk what chan is so i changed it to pid. 
 static void
 wakeup1(int chan)
 {
@@ -259,7 +258,6 @@ wakeup1(int chan)
     if(p->state == SLEEPING && p->chan == chan)
       p->state = RUNNABLE;
 }
-
 
 void
 Wakeup(int chan)
@@ -271,17 +269,14 @@ Wakeup(int chan)
 
 
 //makayla method 
+//increase proc with given pid by given number of tickets 
 void 
 TicketIncrease(int pid, int t){
-	struct proc *p;
-	acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
+	struct proc *p = findproc(pid);
+	if(p !=0){
 		p->tickets = p->tickets + t; 
-		TotalTickets = TotalTickets + t; 
-		}
 	}
-	printf("Total tickets: %d\n", TotalTickets);
+	//printf("Total tickets: %d\n", TotalTickets);
 	
 }
 
@@ -323,20 +318,33 @@ scheduler(void)
 
 	//stop running current process 
   curr_proc->state = RUNNABLE;
-
+  //initialize needed variables 
+  int totalTickets = 0;
   struct proc *p;
   
+  //calculate total tickets of runnable procs 
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+	  if( p->state == RUNNABLE){
+		  totalTickets += p->tickets; 
+		  }
+  }
+  //printf("Total tickets: %d\n", totalTickets); 
+  
+  
 	//pick a lottery winner 
-	int winner = (rand() % (TotalTickets)); 
+	int winner = (rand() % (totalTickets)); 
 	//***printf("winner is: %d\n", winner);
 	//initialize counter 
 	int counter =0; 
 	
 	//loop through procs 
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
 	  //incrememnt counter by tickets per proc 
+	  if(p->state == RUNNABLE){
 	  counter += p->tickets; 
+	  }
 	  //***printf("counter is at: %d\n", counter);
 	  //find winner 
 	  if (counter > winner) 
