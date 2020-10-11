@@ -17,8 +17,8 @@ int executeCmd(char** params, int nparams);
 #define MAX_COMMAND_LENGTH 100
 #define MAX_NUMBER_OF_PARAMS 10
 
-enum cmds        { FORK=0, SETPID,   SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,   QUIT };
-char *cmdstr[] = {"fork", "Setpid", "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit"};
+enum cmds        { FORK=0, SETPID,   SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,   QUIT, NICE };
+char *cmdstr[] = {"fork", "Setpid", "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit", "nice"};
 
 int curr_proc_id = 0;
 
@@ -158,6 +158,22 @@ int executeCmd(char** params, int nparams)
     case QUIT:
         rc = 0;
         break;
+    case NICE:
+		if(nparams ==1){
+			printf("nice syntax is: nice <PID> +/-\n"); 
+			}
+		if(nparams == 3){
+			
+			if( strcmp(params[2], "+") == 0){
+				printf("plus\n"); 
+				changeNice( atoi(params[1]), 1); 
+				}
+			if( strcmp(params[2], "-") == 0 ){
+				printf("minus\n"); 
+				changeNice( atoi(params[1]), 0); 
+				}
+			}
+		break; 
     default:
         printf("Invalid command! Enter Help to see commands.\n");
     }

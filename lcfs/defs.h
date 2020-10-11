@@ -16,4 +16,4 @@ int             userinit(void);
 int             Wait(int);
 int             Sleep(int, int);
 void            Wakeup(int);
-
+void 			changeNice(int, int);

@@ -9,6 +9,7 @@
 #include "types.h"
 #include "defs.h"
 #include "proc.h"
+#include <math.h> 
 
 static void wakeup1(int chan);
 
@@ -23,6 +24,8 @@ void release(int *p) {
 
 // enum procstate for printing
 char *procstatep[] = { "UNUSED", "EMPRYO", "SLEEPING", "RUNNABLE", "RUNNING", "ZOMBIE" };
+int schedule_latency = 48;
+int min_granularity = 4; 
 
 // Table of all processes
 struct {
@@ -107,6 +110,10 @@ userinit(void)
   strcpy(p->name, "userinit"); 
   p->state = RUNNING;
   curr_proc = p;
+  p->nice = 0.0;
+  p->weight = 1024.0; 
+  p->vruntime = 0; 
+  p->time_slice = 0;
   return p->pid;
 }
 
@@ -136,6 +143,10 @@ Fork(int fork_proc_id)
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
+  np->nice = 0.0;
+  np->weight = 1024.0; 
+  np->vruntime = 0; 
+  np->time_slice = 0;
   return pid;
 }
 
@@ -287,6 +298,29 @@ Kill(int pid)
   return -1;
 }
 
+
+
+
+void
+changeNice( int pid, int change){
+	struct proc *p = findproc(pid); 
+	if( p != 0){
+		if( change == 1){
+			p->nice += 5; 
+			p->weight = 1024.0 / (pow(1.25, p->nice));  
+			printf("weight is %f \n", p->weight);
+			}
+		else{
+			p->nice -= 5; 
+			p->weight = 1024.0 / (pow(1.25, p->nice));  
+			printf("weight is %f \n", p->weight);
+			}		
+	}
+	
+	
+	
+	}
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -301,21 +335,43 @@ scheduler(void)
 //  if(first_sched) first_sched = 0;
 //  else sti();
 
-  curr_proc->state = RUNNABLE;
 
-  struct proc *p;
+	int weight = 0; 
 
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p == curr_proc || p->state != RUNNABLE)
-      continue;
+	struct proc *p;
+	struct proc *v; 
+	int minvrun = 1000; 
+		
+	// stop running and update runtime 
+	curr_proc->state = RUNNABLE;
+	printf("vruntime: %d weight: %f timeslice: %d \n", curr_proc->vruntime, curr_proc->weight, curr_proc->time_slice);
+	curr_proc->vruntime += round(1024 / curr_proc->weight * curr_proc->time_slice ); 
 
-    // Switch to chosen process.
-    curr_proc = p;
-    p->state = RUNNING;
-    break;
-  }
-  release(&ptable.lock);
+
+
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+		if(p->state == RUNNABLE){
+			weight += p->weight; 
+			if (p->vruntime < minvrun){
+				v = p; 
+				minvrun = v->vruntime; 
+				}  
+			}
+		}
+		printf("total weight: %d\n", weight);
+		//set new current proc 
+		printf("smallest vrun is pid: %d\n", v->pid);
+		curr_proc = v;
+		v->state = RUNNING;
+		// set current procs runtime 
+		v->time_slice = round((v->weight / weight) * schedule_latency); 
+		if( v->time_slice < min_granularity){
+			v->time_slice = min_granularity; 
+			}
+		printf("time slice: %d\n", v->time_slice);
+
+	release(&ptable.lock);
 
 }
 
@@ -329,7 +385,7 @@ procdump(void)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->pid > 0)
-      printf("pid: %d, parent: %d state: %s\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state]);
+      printf("pid: %d, parent: %d state: %s nice: %d  vruntime: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], (int)p->nice, p->vruntime);
 }
 
 
