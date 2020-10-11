@@ -165,11 +165,11 @@ int executeCmd(char** params, int nparams)
 		if(nparams == 3){
 			
 			if( strcmp(params[2], "+") == 0){
-				printf("plus\n"); 
+				//printf("plus\n"); 
 				changeNice( atoi(params[1]), 1); 
 				}
 			if( strcmp(params[2], "-") == 0 ){
-				printf("minus\n"); 
+				//printf("minus\n"); 
 				changeNice( atoi(params[1]), 0); 
 				}
 			}

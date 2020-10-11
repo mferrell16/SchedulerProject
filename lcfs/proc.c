@@ -24,6 +24,8 @@ void release(int *p) {
 
 // enum procstate for printing
 char *procstatep[] = { "UNUSED", "EMPRYO", "SLEEPING", "RUNNABLE", "RUNNING", "ZOMBIE" };
+
+//define schedule latency and min granularity 
 int schedule_latency = 48;
 int min_granularity = 4; 
 
@@ -308,12 +310,12 @@ changeNice( int pid, int change){
 		if( change == 1){
 			p->nice += 5; 
 			p->weight = 1024.0 / (pow(1.25, p->nice));  
-			printf("weight is %f \n", p->weight);
+			//printf("weight is %f \n", p->weight);
 			}
 		else{
 			p->nice -= 5; 
 			p->weight = 1024.0 / (pow(1.25, p->nice));  
-			printf("weight is %f \n", p->weight);
+			//printf("weight is %f \n", p->weight);
 			}		
 	}
 	
@@ -342,10 +344,14 @@ scheduler(void)
 	struct proc *v; 
 	int minvrun = 1000; 
 		
-	// stop running and update runtime 
-	curr_proc->state = RUNNABLE;
-	printf("vruntime: %d weight: %f timeslice: %d \n", curr_proc->vruntime, curr_proc->weight, curr_proc->time_slice);
-	curr_proc->vruntime += round(1024 / curr_proc->weight * curr_proc->time_slice ); 
+	// stop running and update runtime if the "running" program is sleeping 
+	if (curr_proc->state != SLEEPING){
+		curr_proc->state = RUNNABLE;
+		curr_proc->vruntime += round(1024 / curr_proc->weight * curr_proc->time_slice ); 
+		}
+	
+	//printf("vruntime: %d weight: %f timeslice: %d \n", curr_proc->vruntime, curr_proc->weight, curr_proc->time_slice);
+	
 
 
 
@@ -359,9 +365,9 @@ scheduler(void)
 				}  
 			}
 		}
-		printf("total weight: %d\n", weight);
+		//printf("total weight: %d\n", weight);
 		//set new current proc 
-		printf("smallest vrun is pid: %d\n", v->pid);
+		//printf("smallest vrun is pid: %d\n", v->pid);
 		curr_proc = v;
 		v->state = RUNNING;
 		// set current procs runtime 
@@ -369,7 +375,7 @@ scheduler(void)
 		if( v->time_slice < min_granularity){
 			v->time_slice = min_granularity; 
 			}
-		printf("time slice: %d\n", v->time_slice);
+		//printf("time slice: %d\n", v->time_slice);
 
 	release(&ptable.lock);
 

@@ -317,7 +317,9 @@ scheduler(void)
 //  else sti();
 
 	//stop running current process 
-  curr_proc->state = RUNNABLE;
+  if(curr_proc->state != SLEEPING){
+	curr_proc->state = RUNNABLE;
+	}
   //initialize needed variables 
   int totalTickets = 0;
   struct proc *p;
